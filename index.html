@@ -1,0 +1,715 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <base target="_top">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="icon" type="image/png" href="https://raw.githubusercontent.com/MatiasH2804/Peluqueria/main/Gemini_Generated_Image_w9c8qxw9c8qxw9c8%20(1).png">
+  <style>
+    :root { --p: #2c3e50; --a: #3498db; --bg: #f8f9fa; --txt: #333; --err: #e74c3c; --succ: #27ae60; }
+    body { font-family: system-ui, sans-serif; background: var(--bg); color: var(--txt); margin: 0; padding-bottom: 80px; font-size: 14px; }
+    
+    /* Layout */
+    .app-container { max-width: 900px; margin: 0 auto; background: white; min-height: 100vh; box-shadow: 0 0 10px rgba(0,0,0,0.05); }
+    .header { background: var(--p); color: white; padding: 15px; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 10; }
+    .h-title { font-weight: bold; font-size: 1.1rem; }
+    
+    /* Nav Scrollable */
+    .nav-scroller { overflow-x: auto; white-space: nowrap; background: #ecf0f1; border-bottom: 1px solid #ddd; }
+    .nav-item { display: inline-block; padding: 12px 15px; color: #7f8c8d; cursor: pointer; font-weight: 500; user-select: none; }
+    .nav-item.active { color: var(--a); border-bottom: 3px solid var(--a); background: white; }
+
+    /* Views */
+    .view { display: none; padding: 15px; }
+    .view.active { display: block; }
+
+    /* Components */
+    .btn { padding: 8px 16px; border-radius: 4px; border: none; cursor: pointer; font-size: 0.9rem; font-weight: 500; }
+    .btn-primary { background: var(--a); color: white; }
+    .btn-danger { background: var(--err); color: white; }
+    .btn-success { background: var(--succ); color: white; }
+    .btn-block { width: 100%; display: block; }
+    .btn-sm { padding: 4px 8px; font-size: 0.8rem; }
+    
+    input, select { width: 100%; padding: 10px; margin-bottom: 10px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box; }
+    .form-group label { display: block; margin-bottom: 4px; font-weight: 500; color: #555; }
+    .row { display: flex; gap: 10px; }
+    .col { flex: 1; }
+
+    /* Tables & Lists */
+    .card { background: white; border: 1px solid #eee; border-radius: 6px; padding: 15px; margin-bottom: 10px; box-shadow: 0 1px 2px rgba(0,0,0,0.05); }
+    .data-table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+    .data-table th { text-align: left; background: #f1f1f1; padding: 8px; }
+    .data-table td { border-bottom: 1px solid #eee; padding: 8px; }
+    .badge { padding: 3px 6px; border-radius: 3px; font-size: 0.75rem; color: white; }
+    .bg-PROGRAMADO { background: #f39c12; }
+    .bg-COMPLETADO { background: #27ae60; }
+    .bg-CANCELADO { background: #e74c3c; }
+    .bg-AUSENTE { background: #95a5a6; }
+
+    /* Calendar Grid */
+    .cal-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(60px, 1fr)); gap: 4px; margin-top: 15px; }
+    .slot { padding: 6px 2px; text-align: center; border: 1px solid #ddd; border-radius: 3px; font-size: 0.8rem; cursor: pointer; background: white; }
+    .slot.oc { background: #fab1a0; color: #d63031; cursor: not-allowed; border-color: #e17055; }
+    .slot.av:hover { background: var(--a); color: white; }
+
+    /* Modals */
+    .modal-mask { position: fixed; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.5); display: none; align-items: center; justify-content: center; z-index: 100; }
+    .modal-box { background: white; width: 90%; max-width: 500px; max-height: 90vh; overflow-y: auto; border-radius: 8px; display: flex; flex-direction: column; }
+    .modal-head { padding: 15px; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; font-weight: bold; }
+    .modal-body { padding: 15px; }
+    
+    .loading { text-align: center; padding: 20px; color: #999; }
+.error-msg { background: #fee; color: #c00; padding: 10px; border-radius: 4px; display: none; margin-bottom: 10px; }
+    
+    /* Login */
+    #login-screen { position: fixed; top:0; left:0; width:100%; height:100%; background: var(--bg); z-index: 9999; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+    .login-box { background: white; padding: 30px; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); width: 90%; max-width: 350px; text-align: center; }
+  </style>
+</head>
+<body>
+
+<div id="login-screen">
+  <div class="login-box">
+    <h2>✂️ PeluPro</h2>
+    <p>Acceso Restringido</p>
+    <form onsubmit="doLogin(event)">
+      <input type="password" id="log-pwd" placeholder="Contraseña..." required>
+      <div id="log-err" class="error-msg">Contraseña incorrecta</div>
+      <button class="btn btn-primary btn-block">Ingresar</button>
+    </form>
+  </div>
+</div>
+
+<div class="app-container" style="display:none;" id="main-app">
+  <div class="header">
+    <div class="h-title">✂️ PeluPro System</div>
+    <div id="loader" style="font-size:0.8rem">Cargando...</div>
+  </div>
+
+  <div class="nav-scroller">
+    <div class="nav-item active" onclick="nav('clientes')">Clientes</div>
+    <div class="nav-item" onclick="nav('agenda')">Agenda</div>
+    <div class="nav-item" onclick="nav('turnos')">Turnos</div>
+    <div class="nav-item" onclick="nav('pagos')">Finanzas</div>
+    <div class="nav-item" onclick="nav('servicios')">Servicios</div>
+    <div class="nav-item" onclick="nav('peluqueros')">Peluqueros</div>
+    <div class="nav-item" onclick="nav('dispo')">Disponibilidad</div>
+  </div>
+
+  <div id="v-clientes" class="view active">
+    <div class="row">
+      <input type="text" id="cli-search" placeholder="Buscar Cliente..." onkeyup="searchCli()">
+      <button class="btn btn-primary" onclick="openCrud('cli')">+</button>
+    </div>
+    <div id="cli-list"></div>
+  </div>
+
+  <div id="v-agenda" class="view">
+    <div class="row">
+      <div class="col"><input type="date" id="ag-date" onchange="loadAgenda()"></div>
+      <div class="col"><select id="ag-pelu" onchange="loadAgenda()"></select></div>
+    </div>
+    <div id="ag-grid" class="cal-grid"></div>
+    <div id="ag-list" style="margin-top:20px"></div>
+  </div>
+
+  <div id="v-turnos" class="view">
+    <div class="row">
+      <input type="date" id="gt-desde">
+      <input type="date" id="gt-hasta">
+    </div>
+    <div class="row">
+      <select id="gt-estado">
+        <option value="TODOS">Todos</option>
+        <option value="PROGRAMADO">Programado</option>
+        <option value="COMPLETADO">Completado</option>
+        <option value="CANCELADO">Cancelado</option>
+      </select>
+      <button class="btn btn-primary" onclick="loadTurnosList()">Filtrar</button>
+    </div>
+    <div id="gt-table" style="margin-top:10px"></div>
+  </div>
+
+  <div id="v-pagos" class="view">
+    <div class="row">
+      <input type="date" id="fz-desde">
+      <input type="date" id="fz-hasta">
+      <button class="btn btn-primary" onclick="loadFinanzas()">Ver</button>
+    </div>
+    <div class="card" style="margin-top:10px">
+      <div>Total: <b id="fz-total" style="font-size:1.2rem">$0</b></div>
+    </div>
+    <div id="fz-list"></div>
+  </div>
+
+  <div id="v-servicios" class="view">
+    <button class="btn btn-primary btn-block" onclick="openCrud('serv')">Nuevo Servicio</button>
+    <div id="serv-list" style="margin-top:10px"></div>
+  </div>
+
+  <div id="v-peluqueros" class="view">
+    <button class="btn btn-primary btn-block" onclick="openCrud('pelu')">Nuevo Peluquero</button>
+    <div id="pelu-list" style="margin-top:10px"></div>
+  </div>
+
+  <div id="v-dispo" class="view">
+    <label>Seleccionar Peluquero para editar:</label>
+    <select id="dp-pelu" onchange="loadDispo()"></select>
+    <div id="dp-matrix" style="margin-top:15px"></div>
+    <button class="btn btn-success btn-block" style="margin-top:15px" onclick="saveDispo()">Guardar Disponibilidad</button>
+  </div>
+</div>
+
+<div id="m-crud" class="modal-mask">
+  <div class="modal-box">
+    <div class="modal-head"><span id="mc-title">Item</span> <span onclick="closeM('m-crud')">&times;</span></div>
+    <div class="modal-body">
+      <form id="f-crud" onsubmit="submitCrud(event)">
+        <input type="hidden" id="mc-id">
+        <input type="hidden" id="mc-type">
+        <div id="mc-fields"></div>
+        <button class="btn btn-primary btn-block">Guardar</button>
+      </form>
+    </div>
+  </div>
+</div>
+
+<div id="m-turno" class="modal-mask">
+  <div class="modal-box">
+    <div class="modal-head">Turno <span onclick="closeM('m-turno')">&times;</span></div>
+    <div class="modal-body">
+      <form id="f-turno" onsubmit="submitTurno(event)">
+        <input type="hidden" id="mt-id">
+        <div class="form-group"><label>Cliente</label><select id="mt-cli" required></select></div>
+        <div class="form-group"><label>Servicio</label><select id="mt-serv" required onchange="calcEnd()"></select></div>
+        <div class="form-group"><label>Peluquero</label><select id="mt-pelu" required></select></div>
+        <div class="row">
+          <div class="col"><label>Fecha</label><input type="date" id="mt-fecha" required></div>
+        </div>
+        <div class="row">
+          <div class="col"><label>Inicio</label><input type="time" id="mt-ini" required onchange="calcEnd()"></div>
+          <div class="col"><label>Fin</label><input type="time" id="mt-fin" readonly></div>
+        </div>
+        <div class="form-group"><label>Estado</label>
+          <select id="mt-estado">
+            <option value="PROGRAMADO">PROGRAMADO</option>
+            <option value="COMPLETADO">COMPLETADO</option>
+            <option value="CANCELADO">CANCELADO</option>
+            <option value="AUSENTE">AUSENTE</option>
+          </select>
+        </div>
+        <div class="form-group"><label>Obs</label><input type="text" id="mt-obs"></div>
+        <div id="mt-err" class="error-msg"></div>
+        <button class="btn btn-primary btn-block">Guardar Turno</button>
+      </form>
+    </div>
+  </div>
+</div>
+
+<div id="m-pago" class="modal-mask">
+  <div class="modal-box">
+    <div class="modal-head">Registrar Pago <span onclick="closeM('m-pago')">&times;</span></div>
+    <div class="modal-body">
+      <form id="f-pago" onsubmit="submitPago(event)">
+        <input type="hidden" id="mp-idTurno">
+        <input type="hidden" id="mp-idCli">
+        <div id="mp-info" style="margin-bottom:10px; font-weight:bold"></div>
+        <label>Fecha</label><input type="date" id="mp-fecha" required>
+        <label>Monto</label><input type="number" id="mp-monto" required>
+        <label>Medio</label>
+        <select id="mp-medio">
+          <option>Efectivo</option><option>MercadoPago</option><option>Transferencia</option><option>Tarjeta</option>
+        </select>
+        <label>Obs</label><input type="text" id="mp-obs">
+        <div id="mp-err" class="error-msg"></div>
+        <button class="btn btn-success btn-block">Confirmar Pago</button>
+      </form>
+    </div>
+  </div>
+</div>
+
+<div id="m-cli" class="modal-mask">
+  <div class="modal-box">
+    <div class="modal-head"><span id="md-title">Cliente</span> <span onclick="closeM('m-cli')">&times;</span></div>
+    <div class="modal-body">
+      <div id="md-content">Cargando...</div>
+      <div style="margin-top:15px; display:flex; gap:10px">
+        <button class="btn btn-primary col" onclick="newTurnoFromCli()">Nuevo Turno</button>
+        <button class="btn btn-success col" onclick="payFromCli()">Registrar Pago</button>
+      </div>
+      <button class="btn btn-secondary btn-block" style="margin-top:10px" onclick="editCliFromModal()">Editar Datos</button>
+    </div>
+  </div>
+</div>
+
+<script>
+let STATE = { cats: {}, config: {}, curCli: null };
+
+// --- INIT & AUTH ---
+const API_URL = "https://script.google.com/macros/s/AKfycbzJHKgghgkJVOR7qD97DdXhpgri4v0dJroUia42kZViQrvpKFERp8tgehiNXktuFpg/exec";
+
+async function apiCall(action, payload = {}) {
+  const pwd = localStorage.getItem('app_pwd') || '';
+  const res = await fetch(API_URL, {
+    method: 'POST',
+    body: JSON.stringify({ action, payload, pwd })
+  });
+  const json = await res.json();
+  if (json.status === 'error') {
+    if (json.message === 'AUTH_FAIL') {
+      logout();
+      throw new Error('AUTH_FAIL');
+    }
+    throw new Error(json.message);
+  }
+  return json.data;
+}
+
+function logout() {
+  localStorage.removeItem('app_pwd');
+  sessionStorage.removeItem('pelupro_init');
+  document.getElementById('main-app').style.display = 'none';
+  document.getElementById('login-screen').style.display = 'flex';
+}
+
+function doLogin(e) {
+  e.preventDefault();
+  const pwd = document.getElementById('log-pwd').value;
+  document.getElementById('log-err').style.display = 'none';
+  localStorage.setItem('app_pwd', pwd);
+  // Borramos caché local para forzar validación real contra el servidor
+  sessionStorage.removeItem('pelupro_init'); 
+  bootApp();
+}
+
+window.onload = () => {
+  const today = new Date().toISOString().split('T')[0];
+  ['ag-date','gt-desde','gt-hasta','fz-desde','fz-hasta','mt-fecha','mp-fecha'].forEach(id => {
+     const el = document.getElementById(id); if(el) el.value = today;
+  });
+  
+  if (localStorage.getItem('app_pwd')) {
+    bootApp();
+  }
+};
+
+function bootApp() {
+  const localCache = sessionStorage.getItem('pelupro_init');
+  if (localCache) {
+    document.getElementById('login-screen').style.display = 'none';
+    document.getElementById('main-app').style.display = 'block';
+    init(JSON.parse(localCache)); 
+  } else {
+    document.querySelector('#login-screen button').innerText = 'Verificando...';
+  }
+
+  apiCall('getInitialData').then(data => {
+    document.getElementById('login-screen').style.display = 'none';
+    document.getElementById('main-app').style.display = 'block';
+    document.querySelector('#login-screen button').innerText = 'Ingresar';
+    sessionStorage.setItem('pelupro_init', JSON.stringify(data));
+    if (!localCache) init(data);
+  }).catch(e => {
+    document.querySelector('#login-screen button').innerText = 'Ingresar';
+    if (e.message === 'AUTH_FAIL') {
+      logout();
+      document.getElementById('log-err').innerText = 'Contraseña incorrecta';
+      document.getElementById('log-err').style.display = 'block';
+    } else if (!localCache) {
+      alert(e.message);
+    }
+  });
+}
+
+function init(data) {
+  STATE.cats = data.cats;
+  STATE.config = data.config;
+  document.getElementById('loader').style.display = 'none';
+  
+  fillSel('ag-pelu', STATE.cats.peluqueros, true);
+  fillSel('mt-pelu', STATE.cats.peluqueros);
+  fillSel('mt-serv', STATE.cats.servicios);
+  fillSel('dp-pelu', STATE.cats.peluqueros);
+  
+  // Render Listados Estáticos
+  renderCrudList('serv', STATE.cats.servicios);
+  renderCrudList('pelu', STATE.cats.peluqueros);
+  searchCli(); // Init clientes
+}
+
+// --- NAV ---
+function nav(id) {
+  document.querySelectorAll('.view').forEach(e => e.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(e => e.classList.remove('active'));
+  document.getElementById('v-'+id).classList.add('active');
+  document.querySelector(`.nav-item[onclick="nav('${id}')"]`).classList.add('active');
+  
+  if(id === 'agenda') loadAgenda();
+  if(id === 'dispo') loadDispo();
+}
+
+// --- CLIENTES ---
+let tmr;
+function searchCli() {
+  clearTimeout(tmr);
+tmr = setTimeout(() => {
+    const q = document.getElementById('cli-search').value;
+    document.getElementById('cli-list').innerHTML = '<div class="loading">...</div>';
+    apiCall('searchClientes', { query: q }).then(drawCliList).catch(e => alert(e.message));
+  }, 400);
+}
+function drawCliList(list) {
+  const c = document.getElementById('cli-list'); c.innerHTML = '';
+  list.forEach(i => {
+    const d = document.createElement('div');
+    d.className = 'card';
+    d.innerHTML = `<b>${i.text}</b><br><small>${i.tel||''}</small>`;
+    d.onclick = () => openCli(i);
+    c.appendChild(d);
+  });
+}
+function openCli(c) {
+  STATE.curCli = c; // Guardamos ref minima
+  document.getElementById('m-cli').style.display = 'flex';
+  document.getElementById('md-title').innerText = c.text;
+  document.getElementById('md-content').innerHTML = 'Cargando...';
+  
+apiCall('getClienteDetalle', { idCliente: c.id }).then(det => {
+    STATE.curCli.detalle = det; // Guardamos detalle completo
+    let h = '';
+    // Flashcards
+    if(det.ultimoTurno) {
+      const t = det.ultimoTurno;
+      const bg = t.pagado ? 'bg-COMPLETADO' : 'bg-PROGRAMADO';
+      const txt = t.pagado ? 'PAGADO' : 'IMPAGO';
+      h += `<div class="card"><b>Último Turno</b> <span class="badge ${bg}">${txt}</span><br>
+            ${t.fecha} ${t.hora}<br>${t.servicio} ($${t.precio})<br>${t.estado}</div>`;
+    } else h += '<div class="card">Sin turnos</div>';
+    
+    if(det.ultimoPago) {
+      h += `<div class="card"><b>Último Pago</b><br>${det.ultimoPago.fecha}: $${det.ultimoPago.monto}</div>`;
+    }
+    h += `<div class="card"><b>Total Histórico</b>: $${det.stats.totalPagado} (${det.stats.cantTurnos} turnos)</div>`;
+    document.getElementById('md-content').innerHTML = h;
+  }).catch(e => alert(e.message));
+}
+function editCliFromModal() {
+  closeM('m-cli');
+  openCrud('cli', STATE.curCli); // Abre form edición
+}
+
+// --- AGENDA ---
+function loadAgenda() {
+  const f = document.getElementById('ag-date').value;
+  const p = document.getElementById('ag-pelu').value;
+  document.getElementById('ag-grid').innerHTML = '...';
+  document.getElementById('ag-list').innerHTML = '';
+  
+apiCall('getTurnosDiaAgenda', { fecha: f, idPeluquero: p }).then(res => {
+    drawGrid(res.turnos, res.disponibilidad);
+    drawAgList(res.turnos);
+  }).catch(e => alert(e.message));
+}
+function drawGrid(turnos, dispo) {
+  const g = document.getElementById('ag-grid'); g.innerHTML = '';
+  let min = 9*60, max = 20*60; // Default
+  if(dispo) { min = dispo.startMin; max = dispo.endMin; }
+  else if(document.getElementById('ag-pelu').value) {
+     g.innerHTML = 'Sin disponibilidad cargada.'; return;
+  }
+  
+  const step = parseInt(STATE.config.HORARIO_INTERVALO || 40);
+  for(let m=min; m<max; m+=step) {
+    const time = minsToTime(m);
+    const endM = m + step;
+    // Ocupado si algun turno solapa
+    const occ = turnos.find(t => t.startMin < endM && t.endMin > m);
+    const d = document.createElement('div');
+    d.className = `slot ${occ ? 'oc' : 'av'}`;
+    d.innerText = time;
+    if(!occ) d.onclick = () => openTurno(null, time);
+    g.appendChild(d);
+  }
+}
+function drawAgList(list) {
+  const c = document.getElementById('ag-list');
+  list.forEach(t => {
+     const d = document.createElement('div');
+     d.className = 'card';
+     d.innerHTML = `<b>${t.start}-${t.end}</b> ${t.cliente} (${t.servicio}) <span class="badge bg-${t.estado}">${t.estado}</span>`;
+     d.onclick = () => openTurno(t); // Edicion
+     c.appendChild(d);
+  });
+}
+
+// --- GESTIÓN TURNOS ---
+function loadTurnosList() {
+  const d = document.getElementById('gt-desde').value;
+  const h = document.getElementById('gt-hasta').value;
+  const e = document.getElementById('gt-estado').value;
+  document.getElementById('gt-table').innerHTML = 'Cargando...';
+  
+apiCall('getTurnosGestion', { desde: d, hasta: h, estado: e }).then(list => {
+    let html = `<table class="data-table"><thead><tr><th>Fecha</th><th>Cliente</th><th>Servicio</th><th>Est</th><th>Pagado</th><th>Acción</th></tr></thead><tbody>`;
+    list.forEach(t => {
+       const paySt = t.pagado ? '<span style="color:green">✔</span>' : '<span style="color:red">✘</span>';
+       const btnPay = t.pagado 
+          ? '<span class="badge bg-COMPLETADO">Pagado</span>' 
+          : `<button class="btn btn-sm btn-success" onclick='openPagoFromList("${t.id}", "${t.idCliente}", "${t.cliente}", ${t.precio})'>$</button>`;
+
+       html += `<tr>
+         <td>${t.fecha}<br>${t.hora}</td>
+         <td>${t.cliente}</td>
+         <td>${t.servicio}</td>
+         <td><span class="badge bg-${t.estado}">${t.estado.substr(0,3)}</span></td>
+         <td align="center">${paySt}</td>
+         <td>
+           <button class="btn btn-sm btn-primary" onclick='openTurnoById("${t.id}")'>Edit</button>
+           ${btnPay}
+         </td>
+       </tr>`;
+    });
+    html += '</tbody></table>';
+    document.getElementById('gt-table').innerHTML = html;
+  }).catch(e => alert(e.message));
+}
+
+// --- MODAL TURNOS (CREATE/EDIT) ---
+function openTurno(tObj, timeIni) {
+  document.getElementById('m-turno').style.display = 'flex';
+  document.getElementById('mt-err').style.display = 'none';
+  fillSel('mt-cli', [{id:'', text:'-'}]); // Reset inicial
+  
+  if(tObj) { // Edit
+     document.getElementById('mt-id').value = tObj.id;
+     fillSel('mt-cli', [{id: tObj.idCliente, text: tObj.cliente}]); 
+     document.getElementById('mt-cli').value = tObj.idCliente;
+     document.getElementById('mt-serv').value = tObj.idServicio;
+     document.getElementById('mt-pelu').value = tObj.idPeluquero;
+     document.getElementById('mt-fecha').value = tObj.fecha || document.getElementById('ag-date').value;
+     document.getElementById('mt-ini').value = tObj.start;
+     document.getElementById('mt-fin').value = tObj.end;
+     document.getElementById('mt-estado').value = tObj.estado;
+  } else { // New
+     document.getElementById('mt-id').value = '';
+     if(STATE.curCli) {
+        fillSel('mt-cli', [STATE.curCli]);
+        document.getElementById('mt-cli').value = STATE.curCli.id;
+     } else {
+// Cargar clientes default
+        document.getElementById('mt-cli').innerHTML = '<option>Cargando...</option>';
+        apiCall('searchClientes', { query: '' }).then(l => fillSel('mt-cli', l, true)).catch(e => alert(e.message));
+     }
+     document.getElementById('mt-fecha').value = document.getElementById('ag-date').value;
+     if(timeIni) document.getElementById('mt-ini').value = timeIni;
+     document.getElementById('mt-pelu').value = document.getElementById('ag-pelu').value;
+     calcEnd();
+  }
+}
+
+function openTurnoById(id) {
+  apiCall('getTurnoById', { idTurno: id }).then(t => {
+     const obj = {
+       id: t.idTurno,
+       idCliente: t.idCliente,
+       cliente: t.clienteNombre,
+       idServicio: t.idServicio,
+       idPeluquero: t.idPeluquero,
+       fecha: t.fecha,
+       start: t.horaInicio,
+       end: t.horaFin,
+       estado: t.estado
+     };
+     openTurno(obj);
+  }).catch(e => alert(e.message));
+}
+
+// NUEVA FUNCION: Puente desde el botón de la tabla al modal de pago
+function openPagoFromList(idTurno, idCli, nomCli, precio) {
+  openPago(idCli, nomCli, idTurno, precio);
+}
+
+function newTurnoFromCli() { closeM('m-cli'); nav('agenda'); setTimeout(() => openTurno(null), 300); }
+
+function calcEnd() {
+  const ini = document.getElementById('mt-ini').value;
+  const sId = document.getElementById('mt-serv').value;
+  const s = STATE.cats.servicios.find(x => x.id == sId);
+  if(ini && s) {
+     const m = timeToMins(ini) + s.duracion;
+     document.getElementById('mt-fin').value = minsToTime(m);
+  }
+}
+function submitTurno(e) {
+  e.preventDefault();
+  const data = {
+    idTurno: document.getElementById('mt-id').value,
+    idCliente: document.getElementById('mt-cli').value,
+    idServicio: document.getElementById('mt-serv').value,
+    idPeluquero: document.getElementById('mt-pelu').value,
+    fecha: document.getElementById('mt-fecha').value,
+    horaInicio: document.getElementById('mt-ini').value,
+    horaFin: document.getElementById('mt-fin').value,
+    estado: document.getElementById('mt-estado').value,
+    observaciones: document.getElementById('mt-obs').value
+  };
+apiCall('saveTurno', { form: data }).then(() => {
+     closeM('m-turno'); 
+     if(document.getElementById('v-agenda').classList.contains('active')) loadAgenda();
+     if(document.getElementById('v-turnos').classList.contains('active')) loadTurnosList();
+  }).catch(err => {
+     document.getElementById('mt-err').innerText = err.message;
+     document.getElementById('mt-err').style.display = 'block';
+  });
+}
+
+// --- PAGOS ---
+function payFromCli() {
+  const c = STATE.curCli;
+  let monto = 0, idTurno = '';
+  // Sugerir ultimo turno IMPAGO
+  if(c.detalle && c.detalle.ultimoTurno && !c.detalle.ultimoTurno.pagado) {
+     monto = c.detalle.ultimoTurno.precio;
+     idTurno = c.detalle.ultimoTurno.id;
+  }
+  openPago(c.id, c.text, idTurno, monto);
+}
+function openPago(idCli, nomCli, idTurno, monto) {
+  closeM('m-cli'); // Por si venimos de ahi
+  document.getElementById('m-pago').style.display = 'flex';
+  document.getElementById('mp-idCli').value = idCli;
+  document.getElementById('mp-idTurno').value = idTurno||'';
+  document.getElementById('mp-monto').value = monto||0;
+  document.getElementById('mp-info').innerText = nomCli + (idTurno ? " (Turno vinculado)" : " (Pago Libre)");
+}
+function submitPago(e) {
+  e.preventDefault();
+  const data = {
+    idTurno: document.getElementById('mp-idTurno').value,
+    idCliente: document.getElementById('mp-idCli').value,
+    fechaPago: document.getElementById('mp-fecha').value,
+    monto: document.getElementById('mp-monto').value,
+    medioPago: document.getElementById('mp-medio').value,
+    observaciones: document.getElementById('mp-obs').value
+  };
+apiCall('registrarPago', { form: data }).then(() => {
+    closeM('m-pago'); 
+    alert('Pago registrado'); 
+    if(document.getElementById('v-turnos').classList.contains('active')) loadTurnosList();
+    else nav('pagos');
+  }).catch(e => alert(e.message));
+}
+function loadFinanzas() {
+  const d = document.getElementById('fz-desde').value;
+  const h = document.getElementById('fz-hasta').value;
+apiCall('getPagosList', { desde: d, hasta: h }).then(res => {
+     document.getElementById('fz-total').innerText = '$' + res.resumen.total;
+     let html = '<table class="data-table"><thead><tr><th>Fecha</th><th>Cliente</th><th>Monto</th><th>Medio</th></tr></thead><tbody>';
+     res.lista.forEach(p => {
+       html += `<tr><td>${p.fecha}</td><td>${p.cliente}</td><td>$${p.monto}</td><td>${p.medio}</td></tr>`;
+     });
+     html += '</tbody></table>';
+     document.getElementById('fz-list').innerHTML = html;
+  }).catch(e => alert(e.message));
+}
+
+// --- CRUD GENERICO ---
+function openCrud(type, obj=null) {
+  document.getElementById('m-crud').style.display = 'flex';
+  document.getElementById('mc-type').value = type;
+  document.getElementById('mc-id').value = obj ? obj.id : '';
+  const c = document.getElementById('mc-fields'); c.innerHTML = '';
+  
+  // Fields logic simple
+  if(type === 'cli') {
+     document.getElementById('mc-title').innerText = 'Cliente';
+     c.innerHTML += fld('Nombre', obj?obj.text.split(' ')[0]:'');
+     c.innerHTML += fld('Apellido', obj?obj.text.split(' ')[1]:''); // Simple hack
+     c.innerHTML += fld('Telefono', obj?obj.tel:'');
+  }
+  else if(type === 'serv') {
+     document.getElementById('mc-title').innerText = 'Servicio';
+     c.innerHTML += fld('NombreServicio', obj?obj.text:'');
+     c.innerHTML += fld('DuracionMin', obj?obj.duracion:'', 'number');
+     c.innerHTML += fld('PrecioBase', obj?obj.precio:'', 'number');
+  }
+  else if(type === 'pelu') {
+     document.getElementById('mc-title').innerText = 'Peluquero';
+     c.innerHTML += fld('Nombre', obj?obj.text.split(' ')[0]:'');
+     c.innerHTML += fld('Apellido', obj?obj.text.split(' ')[1]:'');
+  }
+  c.innerHTML += `<div class="form-group"><label>Activo</label><select name="Activo"><option value="true">Sí</option><option value="false">No</option></select></div>`;
+}
+function fld(name, val, type='text') {
+  return `<div class="form-group"><label>${name}</label><input name="${name}" value="${val||''}" type="${type}" required></div>`;
+}
+function submitCrud(e) {
+  e.preventDefault();
+  const fd = new FormData(e.target);
+  const data = Object.fromEntries(fd.entries());
+  const type = document.getElementById('mc-type').value;
+  const id = document.getElementById('mc-id').value;
+  // Mapear al backend fields
+  if(type=='cli') data.IDCliente = id;
+  if(type=='serv') data.IDServicio = id;
+  if(type=='pelu') data.IDPeluquero = id;
+  
+  const handler = () => { closeM('m-crud'); location.reload(); /* Brutal refresh para recargar catalogos */ };
+  
+if(type=='cli') apiCall('saveCliente', { data }).then(handler).catch(e => alert(e.message));
+  if(type=='serv') apiCall('saveServicio', { data }).then(handler).catch(e => alert(e.message));
+  if(type=='pelu') apiCall('savePeluquero', { data }).then(handler).catch(e => alert(e.message));
+}
+function renderCrudList(type, list) {
+  const c = document.getElementById(type+'-list');
+  list.forEach(i => {
+    const d = document.createElement('div'); d.className = 'card';
+    d.innerHTML = `<b>${i.text}</b>` + (i.precio ? ` ($${i.precio})` : '');
+    d.onclick = () => openCrud(type, i);
+    c.appendChild(d);
+  });
+}
+
+// --- DISPONIBILIDAD ---
+function loadDispo() {
+  const p = document.getElementById('dp-pelu').value;
+  if(!p) return;
+apiCall('getDisponibilidadFull', { idPeluquero: p }).then(mx => {
+    const c = document.getElementById('dp-matrix'); c.innerHTML = '';
+    ['Lunes','Martes','Miercoles','Jueves','Viernes','Sabado','Domingo'].forEach(d => {
+       const v = mx[d] || {active:false, inicio:'', fin:''};
+       c.innerHTML += `
+       <div class="card row" style="align-items:center">
+         <div class="col" style="flex:0 0 80px"><b>${d}</b></div>
+         <div class="col"><input type="checkbox" class="dp-chk" data-dia="${d}" ${v.activo?'checked':''}> Trabaja</div>
+         <div class="col"><input type="time" class="dp-ini" data-dia="${d}" value="${v.inicio}"></div>
+         <div class="col"><input type="time" class="dp-fin" data-dia="${d}" value="${v.fin}"></div>
+       </div>`;
+    });
+  }).catch(e => alert(e.message));
+}
+function saveDispo() {
+  const p = document.getElementById('dp-pelu').value;
+  const matrix = {};
+  document.querySelectorAll('.dp-chk').forEach(chk => {
+     const d = chk.dataset.dia;
+     const row = chk.parentElement.parentElement;
+     matrix[d] = {
+       activo: chk.checked,
+       inicio: row.querySelector('.dp-ini').value,
+       fin: row.querySelector('.dp-fin').value
+     };
+  });
+apiCall('saveDisponibilidad', { idPeluquero: p, matrix }).then(() => alert('Guardado')).catch(e => alert(e.message));}
+
+// --- UTILS ---
+function closeM(id) { document.getElementById(id).style.display = 'none'; }
+function fillSel(id, arr, emp=false) {
+  const s = document.getElementById(id); s.innerHTML = emp ? '<option value="">-</option>' : '';
+  arr.forEach(i => { const o = document.createElement('option'); o.value=i.id; o.text=i.text; s.appendChild(o); });
+}
+function minsToTime(m) { return `${Math.floor(m/60).toString().padStart(2,'0')}:${(m%60).toString().padStart(2,'0')}`; }
+function timeToMins(s) { const p=s.split(':'); return parseInt(p[0])*60+parseInt(p[1]); }
+</script>
+</body>
+</html>
